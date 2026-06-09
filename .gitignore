@@ -1,7 +1,8 @@
 venv312/
 workhub/mysqldb.cnf
 workhub/workhub/settings.py
-
+.vscode
+.idea
 
 
 # Django #
