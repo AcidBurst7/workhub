@@ -1,0 +1,329 @@
+{% extends "base_templates/base.html" %}
+{% load user_groups %}
+{% load string_helpers %}
+{% block title %}Заявка{% endblock %}
+{% block content %}
+<div class="container-fluid" style="margin-top: auto; margin-bottom: auto;">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'crm:index' %}">Главная</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'reminders:search_reminders_by_requests' %}">Заявки</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Заявка</li>
+        </ol>
+    </nav>
+
+    <div class="container-fluid">
+        <!-- Начало блока "Карточка заявки" -->
+        <div class="row mb-3 px-3 card">
+            <div class="card-body">
+                <ul class="nav flex-row align-items-center mb-3">
+                    <li class="ml-4">
+                        <a href="{% url 'requests:update_request' request_.id%}" class="fs-5 text-decoration-none" title="Редактировать">
+                            <i class="bi bi-pencil-fill" style="margin-right: 10px;"></i>
+                        </a>
+                    </li>
+                    <li>
+                        <form action="{% url 'requests:delete_request' request_.id %}">
+                            {% csrf_token %}
+
+                            <button type="submit" title="Удалить" 
+                                    id="delete_request" class="fs-5 btn btn-none" 
+                                    onclick="return confirm('Вы действительно хотите удалить эту заявку?');">
+                                    <i class="bi bi-trash-fill text-danger"></i>
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+                
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Параметр</th>
+                            <th>Значение</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Номер п/п</td>
+                            <td>{% autoescape off %}{{ request_.id }} {% endautoescape %}</td>
+                        </tr>
+                        <tr>
+                            <td>Наименование заявки</td>
+                            <td>{% autoescape off %}{{ request_.title }} {% endautoescape %}</td>
+                        </tr>
+                        <tr>
+                            <td>Статус</td>
+                            <td>
+                                {% if request.user|has_group:"director" or request.user|has_group:"manager" or request.user|has_group:"tech_manager" or request.user|has_group:"tech_director" %}
+                                    <a data-bs-toggle="collapse" href="#new_status" role="button" aria-expanded="false" aria-controls="new_status">
+                                        {{ request_.status.name }}
+                                    </a>
+                                    <div class="collapse" id="new_status">
+                                        <form action="{% url 'requests:update_request_status' request_.id %}" method="post">
+                                            <input type="hidden" name="request_id" value="{{ request_.id }}">
+
+                                            <div class="row mt-2">
+                                                <div class="col-auto">
+                                                    {{ update_request_status_form.as_div }}
+                                                </div>
+                                                <div class="col-auto">
+                                                    <button class="btn btn-primary" type="submit" id="submit">Сохранить</button>
+                                                </div>
+                                            </div>
+                                            {% csrf_token %}
+                                        </form>
+                                    </div>
+                                {% else %}
+                                    {{ request.status.name }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Менеджер</td>
+                            <td>{% autoescape off %}{{ request_.company.id_manager.fio }} {% endautoescape %}</td>
+                        </tr>
+                        <tr>
+                            <td>Назначена</td>
+                            <td>
+                                {% if request.user|has_group:"director" or request.user|has_group:"tech_manager" or request.user|has_group:"tech_director" %}
+                                <a data-bs-toggle="collapse" href="#new_user" role="button" aria-expanded="false" aria-controls="new_user">
+                                    {{ request_.user.fio }}
+                                    {% if request_.user.fio == '' %} Не назначен {% endif %}
+                                </a>
+                                <div class="collapse" id="new_user">
+                                    <form action="{% url 'requests:update_request_user' request_.id %}" method="post">
+                                        <input type="hidden" name="request_id" value="{{ request_.id }}">
+
+                                        <div class="row mt-2">
+                                            <div class="col-auto">
+                                                {{ update_request_user_form.as_div }}
+                                            </div>
+                                            <div class="col-auto">
+                                                <button class="btn btn-primary" type="submit" id="submit">Сохранить</button>
+                                            </div>
+                                        </div>
+                                        {% csrf_token %}
+                                    </form>
+                                </div>
+                                {% else %}
+                                    {{ request_.user.fio }}
+                                    {% if request_.user.fio == '' %} Не назначен {% endif %}
+                                {% endif %}
+                            </td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>Наименование компании</td>
+                            <td>
+                                {% autoescape off %}
+                                    {{ request_.company_name|linebreaks  }}
+                                {% endautoescape %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Тип компании</td>
+                            <td>{{ request_.company.id_type.name_type }}</td>
+                        </tr>
+                        <tr>
+                            <td>Регион</td>
+                            <td>{{ request_.company.id_region.name_region }}</td>
+                        </tr>
+                        <tr>
+                            <td>Район</td>
+                            <td>{{ request_.company.id_district.name }}</td>
+                        </tr>
+                        <tr>
+                            <td>Адрес</td>
+                            <td>
+                                {% autoescape off %}
+                                    {{ request_.company_address  }}
+                                {% endautoescape %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Телефон</td>
+                            <td>{% autoescape off %}{{ request_.company_phone }} {% endautoescape %}</td>
+                        </tr>
+                        <tr>
+                            <td>Электронная почта</td>
+                            <td>{% autoescape off %}{{ request_.company_email }} {% endautoescape %}</td>
+                        </tr>
+                        <tr>
+                            <td>Директор</td>
+                            <td>{% autoescape off %}{{ request_.company_director }}{% endautoescape %}</td>
+                        </tr>
+                        <tr>
+                            <td>Другое контактное лицо, должность, телефон</td>
+                            <td>
+                                {% autoescape off %}
+                                {{ request_.company_contact }} {{ request_.company_contact_phone }}
+                                {% endautoescape %}
+                                </td>
+                        </tr>
+                        <tr>
+                            <td>Номер/наименование договора</td>
+                            <td>{% autoescape off %}
+                                {{ request_.contract_name }}
+                                {% endautoescape %}</td>
+                        </tr>
+                        <tr>
+                            <td>Предмет договора</td>
+                            <td>{% autoescape off %}{{ request_.contract_subject }}{% endautoescape %}</td>
+                        </tr>
+                        <tr>
+                            <td>Дата начала работ</td>
+                            <td>{% autoescape off %}{{ request_.contract_start|date:'d.m.Y' }} {% endautoescape %}</td>
+                        </tr>
+                        <tr>
+                            <td>Срок работы</td>
+                            <td>{% autoescape off %}{{ request_.contract_time }} {% endautoescape %}</td>
+                        </tr>
+                        <tr>
+                            <td>Условия согласования</td>
+                            <td>{% autoescape off %}{{ request_.contract_terms }} {% endautoescape %}</td>
+                        </tr>
+                        <tr>
+                            <td>Устная договоренность</td>
+                            <td>{% autoescape off %}{{ request_.contract_agreement }} {% endautoescape %}</td>
+                        </tr>
+                        <tr>
+                            <td>Численность населения / часовой пояс</td>
+                            <td>{% autoescape off %}{{ request_.contract_population }} {% endautoescape %}</td>
+                        </tr>
+                        <tr>
+                            <td>На кого заключен договор</td>
+                            <td>{% autoescape off %}{{ request_.contract_owner }} {% endautoescape %}</td>
+                        </tr>
+                        <tr>
+                            <td>Протяженность дорог</td>
+                            <td>{% autoescape off %}{{ request_.road_length }} {% endautoescape %}</td>
+                        </tr>
+                        <tr>
+                            <td>Примечание (таблицы, ТЗ измененное)</td>
+                            <td>{% autoescape off %}{{ request_.contract_info }} {% endautoescape %}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="text-end">
+                    <span>Создано  {{ request_.created_at|date:'d.m.Y H:i:s' }} / Обновлено {{ request_.updated_at|date:'d.m.Y H:i:s' }}</span>
+                </div>
+            </div>
+        </div>
+        <!-- Конец блока "Карточка заявки" -->
+
+        <!-- Начало блока "Напоминания" -->
+        <div class="row mb-3 card">
+            <div class="card-header bg-light">
+                <strong>Напоминания #{{ request_.id }} {{ request_.title }}</strong>
+            </div>
+            <div class="card-body">
+                <p><a href="{% url 'requests:update_request_reminder' request_.id 0 %}" 
+                    title="Новое напоминание" class="btn btn-outline-primary">
+                    <b><i class="bi bi-plus"></i> Создать напоминание</b>
+                </a></p>
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Дата</th>
+                            <th>Текст</th>
+                            <th>Статус</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for request_reminder in request_reminders %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ request_reminder.due_date|date:'d.m.Y' }}</td>
+                                <td>{{ request_reminder.text }}</td>
+                                <td>{{ request_reminder.status }}</td>
+                                <td>
+                                    <ul class="nav flex-row align-items-center">
+                                        <li class="ml-4">
+                                            <a href="{% url 'requests:update_request_reminder' request_.id request_reminder.id %}" class="fs-5 text-decoration-none" 
+                                            title="Редактировать">
+                                                <i class="bi bi-pencil-fill" style="margin-right: 10px;"></i>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <form action="{% url 'requests:delete_request_reminder' request_.id request_reminder.id %}">
+                                                {% csrf_token %}
+                    
+                                                <button type="submit" title="Удалить" class="fs-5 btn btn-none" 
+                                                        onclick="return confirm('Вы действительно хотите удалить этот объект?');">
+                                                        <i class="bi bi-trash-fill text-danger"></i>
+                                                </button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- Конец блока "Напоминания" -->
+
+        <!-- Начало блока "Переговоры" -->
+        <div class="row mb-3 card">
+            <div class="card-header">
+                <strong>Переговоры #{{ request_.id }} {{ request_.title }}</strong>
+            </div>
+            <div class="card-body">
+                <p><a href="{% url 'requests:update_request_comment' request_.id 0 %}" 
+                    title="Новое напоминание" class="btn btn-outline-primary">
+                    <b><i class="bi bi-plus"></i> Создать переговор</b>
+                </a></p>
+                
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Дата</th>
+                            <th style="width: 45%;">Текст</th>
+                            <th>Статус</th>
+                            <th style="width: 10%;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for request_comment in request_comments %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ request_comment.created_at|date:'d.m.Y H:i' }}</td>
+                                <td>{{ request_comment.text|convert_link_to_shortlink }}</td>
+                                <td>{% if request_comment.status %}  {% else %} {% endif %}</td>
+                                <td>
+                                    <ul class="nav d-flex flex-row justify-content-center align-items-center">
+                                        <li class="ml-4">
+                                            <a href="{% url 'requests:update_request_comment' request_.id request_comment.id %}" class="fs-5 text-decoration-none" 
+                                            title="Редактировать">
+                                                <i class="bi bi-pencil-fill" style="margin-right: 10px;"></i>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <form action="{% url 'requests:delete_request_comment' request_.id request_comment.id %}">
+                                                {% csrf_token %}
+                    
+                                                <button type="submit" title="Удалить" class="fs-5 btn btn-none" 
+                                                        onclick="return confirm('Вы действительно хотите удалить этот объект?');">
+                                                        <i class="bi bi-trash-fill text-danger"></i>
+                                                </button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- Конец блока "Переговоры" -->
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,13 @@
+{% extends "base_templates/base.html" %}
+
+{% block title %}CRM | Выход{% endblock %}
+
+{% block content %}
+<h1>До свидания</h1>
+<div class="module">
+<p>
+    Вы успешно вышли из системы
+    Вы можете <a href="{% url 'account:login' %}">войти</a> снова.
+</p>
+</div>
+{% endblock %}

@@ -1,0 +1,124 @@
+{% extends "base_templates/base.html" %}
+{% block title %}Заявка{% endblock %}
+{% load user_groups %}
+{% load static %}
+{% block content %}
+<div class="container-fluid" style="margin-top: auto; margin-bottom: auto;">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'crm:index' %}">Главная</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'reminders:search_reminders_by_requests' %}">Заявки</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Заявка</li>
+        </ol>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row card">
+            <div class="card-body">
+                <form id="view_request" action="{% url 'requests:post_update_request' request_.id %}" method="POST">
+                    {% csrf_token %}
+
+                    {% for field in request_form %}
+                    <p>
+                        {% if field.label == 'Тип компании:' %}
+                            <b>{{ field.label }}</b>
+                            {{ request_.company.id_type.name_type }}
+                        {% elif field.label == 'Наименование заявки:' or field.label == 'Дата начала работ:' %}
+                            <b>{{ field.label }}  <span class="text-danger">*</span></b>
+                            {{ field }}
+                        {% elif field.label == 'Регион:' %}
+                            <b>{{ field.label }}</b>
+                            {{ request_.company.id_region.name_region }}
+                        {% elif field.label == 'Район:' %}
+                            <b>{{ field.label }}</b>
+                            {{ request_.company.id_district.name }}
+                        {% elif field.label == 'Статус:' %}
+                            {% if user_group == "director" or user_group == "tech_manager" or user_group == "tech_director" %}
+                            <b>{{ field.label }}</b>
+                                {{ field }}
+                            {% else %}
+                                <input type="hidden" name="status_id" value="{{ request_.status_id }}">
+                            {% endif %}
+                        {% elif field.label == 'Специалист:' %}
+                            {% if user_group == "tech_manager" or user_group == "tech_director" %}
+                            <b>{{ field.label }}</b>
+                                {{ field }}
+                            {% else %}
+                                <input type="hidden" name="user_id" value="{{ request_.user_id }}">
+                            {% endif %}
+                        {% else %}
+                            <b>{{ field.label }}</b>
+                            {{ field }}
+                        {% endif %}
+                    
+                    </p>
+                    {% endfor %}
+    
+                    <input type="submit" value="Сохранить" class="btn btn-primary">
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'lib/ckeditor.js' %}"></script>
+<script src="{% static 'lib/ckeditor-ru.js' %}"></script>
+<script>
+    // function listen_user_select(e) {
+    //     if (user_select.value == '') {
+    //         status_select.value = status_select.dataset.initial
+    //         status_select.style.pointerEvents = 'none'
+    //         if (e) {
+    //             e.preventDefault()
+    //             return false
+    //         }
+    //     } else {
+    //         status_select.style.pointerEvents = ''
+    //     }
+    // }
+    
+    // let form_changed = false
+    // window.addEventListener('beforeunload', window_close);
+    // window.addEventListener('unload', window_close);
+
+    // document.querySelector('#view_request').addEventListener('keypress', () => form_changed = true)
+    // document.querySelector('#view_request').addEventListener('click', () => form_changed = true)
+
+    // const status_select = document.querySelector('select#status_id')
+    // const user_select = document.querySelector('select#user_id')
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        // if (status_select !== null && user_select !== null) {
+        //     user_select.addEventListener('change', listen_user_select)
+        //     listen_user_select(false)
+        // }
+
+        document.querySelectorAll('textarea.form-control').forEach(node => {
+            node.required = false
+            ClassicEditor.create(
+                node, {
+                    toolbar: {
+                        items: [
+                            'bold',
+                            'fontColor',
+                            'removeFormat'
+                        ]
+                    },
+                    language: 'ru',
+                    table: {
+                        contentToolbar: [
+                            'tableColumn',
+                            'tableRow',
+                            'mergeTableCells',
+                            'tableCellProperties',
+                            'tableProperties'
+                        ]
+                    },
+                }
+            )
+        })
+    })
+</script>
+{% endblock %}
+
+

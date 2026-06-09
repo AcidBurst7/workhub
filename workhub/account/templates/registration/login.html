@@ -1,0 +1,39 @@
+{% extends "base_templates/base.html" %}
+
+{% block title %}CRM | Авторизация{% endblock %}
+
+{% block content %}
+<section>
+	<div id="container_demo">
+		<div id="wrapper">
+			
+
+			<div id="login" class="animate form">
+				<form action="{% url 'account:login' %}" method="post" autocomplete="off">
+					<h1>Авторизация</h1>
+
+					{{ form.as_p }}
+					{% csrf_token %}
+
+					<!-- <p>
+						<label for="user" class="uname" data-icon="u"> Ваш логин</label>
+						<input name="user" required="required" type="text" placeholder="login" />
+					</p>
+					<p>
+						<label for="pass" class="youpasswd" data-icon="p"> Ваш пароль </label>
+						<input name="pass" required="required" type="password" placeholder="например 123456" />
+					</p>-->
+					<p class="keeplogin">
+						<input type="checkbox" name="loginkeeping" id="loginkeeping" value="loginkeeping" />
+						<label for="loginkeeping">Запомнить меня</label>
+					</p>
+					<p class="login button">
+						<input type="hidden" name="text" value="{{ next }}">
+						<input type="submit" name="submit" value="Войти" />
+					</p> 
+				</form>
+			</div>
+		</div>
+	</div>
+</section>
+{% endblock %}

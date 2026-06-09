@@ -1,0 +1,156 @@
+
+
+{% extends "base_templates/base.html" %}
+
+{% block title %} Почта {% endblock %}
+
+{% load static %}
+
+{% block content %}
+
+<link href="{% static 'css/main.css' %}" rel="stylesheet"/>
+
+<div class="container-fluid" style="margin-top: auto; margin-bottom: auto;">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'crm:index' %}">Главная</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Рассылки</li>
+        </ol>
+      </nav>
+
+    <div class="d-flex">
+        <div class="row">
+            <div class="col-md-12">
+                <ul class="nav nav-tabs" role="tablist">
+                        <li role="presentation" class="active">
+                            <a href="#inbox" aria-controls="inbox" role="tab" data-toggle="tab">
+                                Входящие <span class="badge badge-info"><?= $numMessages ?></span>
+                            </a>
+                        </li>
+    
+                    <li role="presentation">
+                        <a href="#sended_emails" aria-controls="sended_emails" role="tab" data-toggle="tab">
+                            Отправленные
+                        </a>
+                    </li>
+    
+                    <li role="presentation">
+                        <a href="#templates" aria-controls="inbox" role="tab" data-toggle="tab">
+                            Шаблоны
+                            <span class="badge badge-info"></span>
+                        </a>
+                    </li>
+                </ul>
+    
+                <div class="tab-content">
+                    <!-- Вкладка "Входящие" -->
+                        <div role="tabpanel" class="tab-pane active" id="inbox">
+                            <div class="panel panel-info">
+                                <div class="panel-heading">Входящие с почтового ящика <strong>ea503532@yandex.ru</strong></div>
+                                <div class="panel-body">
+                                    <table class="table">
+                                        <thead>
+                                        <tr>
+                                            <th></th>
+                                            <th>Дата</th>
+                                            <th>От</th>
+                                            <th>Карточка компании</th>
+                                            <th>Тема письма</th>
+                                            <th>Менеджер</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="yandex_emails"></tbody>
+                                    </table>
+    
+                                    <!-- <div id="loading_tr" class="text-center mb-5">
+                                        <p>Идет загрузка писем...</p>
+                                        <img src="img/loading.gif" width="25" height="25"></img>
+                                    </div> -->
+    
+                                    <div class="text-center load_yandex_inbox_block" style="display: none">
+                                        <button id="load_yandex_inbox"
+                                                data-limit=""
+                                                data-offset="0"
+                                                data-count="0"
+                                                class="btn btn-primary">
+                                            Загрузить ещё
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+    
+                    <!-- Вкладка "Отправленные письма" -->
+                    <div role="tabpanel" class="tab-pane" id="sended_emails">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="panel panel-info">
+                                    <div class="panel-heading">
+                                        <p>Отправленные письма с ящика <strong>ea503532@yandex.ru</strong></p>
+                                        <p>Вы можете создать новое письмо на странице <a href="search_company.php">поиска компаний</a>
+                                            или в карточке компании, нажав на ссылку с почтовым адресом компании.
+                                        </p>
+                                    </div>
+                                    <div class="panel-body">
+                                        <table class="table">
+                                            <thead>
+                                            <tr>
+                                                <th style="width: 5%;">#</th>
+                                                <th style="width: 45%;">Тема / Регионы</th>
+                                                <th style="width: 15%;">Автор</th>
+                                                <th style="width: 10%;">Дата создания</th>
+                                                <th style="width: 15%;">Дата отправки</th>
+                                                <th style="min-width: 80px"></th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+    
+                    <!-- Вкладка "Шаблоны" -->
+                    <div role="tabpanel" class="tab-pane <?= isset($_GET['tab']) && $_GET['tab'] == "templates" ? 'active' : '' ?>" id="templates">
+                        <div class="panel panel-info">
+                            <div class="panel-heading">
+                                <b>Шаблоны</b>
+                            </div>
+                            <div class="panel-body">
+                                <div class="panel">
+                                    <div class="panel-body">
+                                        <div style="margin-bottom: 20px">
+                                            <a href="edit_email_template.php" class="btn btn-primary">
+                                                <i class="glyphicon glyphicon-plus"></i>&nbsp;<b>Создать шаблон</b>
+                                            </a>
+                                        </div>
+    
+                                        <table class="table">
+                                            <thead>
+                                            <tr>
+                                                <th style="width: 5%">#</th>
+                                                <th style="width: 15%">Дата создания</th>
+                                                <th style="width: 60%">Шаблон</th>
+                                                <th style="width: 60%">Создал(а)</th>
+                                                <th style="width: 8%"></th>
+                                            </tr>
+                                            </thead>
+                                            <tbody id="emails_templates">
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/emails.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base_templates/base.html" %}
+
+{% block title %} 
+
+{% if user_group == 'director' %}Директор
+{% elif user_group == 'manager' %}Менеджер
+{% elif user_group == 'tech_manager' %}Технический специалист
+{% elif user_group == 'tech_director' %}Технический директор
+{% endif %}
+| Главная страница 
+
+{% endblock %}
+
+{% load static %}
+
+{% load user_groups %}
+
+{% block content %}
+
+<link href="{% static 'css/main.css' %}" rel="stylesheet"/>
+<div class="container-fluid main-menu" style="margin-top: auto; margin-bottom: auto;">
+    <div class="row main-menu__wrapper">
+        
+        {% if user_group == 'director' %}
+            {% include 'crm/pages/partials/index/director.html' %}
+        {% elif user_group == 'manager' %}
+            {% include 'crm/pages/partials/index/manager.html' %}
+        {% elif user_group == 'tech_manager' %}
+            {% include 'crm/pages/partials/index/tech_manager.html' %}
+        {% elif user_group == 'tech_director' %}
+            {% include 'crm/pages/partials/index/tech_director.html' %}
+        {% endif %}
+        
+        <div class="clearfix visible-md-block visible-lg-block"></div>
+    </div>
+</div>
+{% endblock %}

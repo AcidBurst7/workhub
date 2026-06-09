@@ -1,0 +1,145 @@
+{% extends "base_templates/base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% load user_groups %}
+{% load static %}
+{% block content %}
+<div class="container-fluid" style="margin-top: auto; margin-bottom: auto;">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'crm:index' %}">Главная</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'reminders:search_reminders_by_requests' %}">Заявки</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
+        </ol>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row card">
+            <div class="card-header">
+                <strong>Комментарий к заявке</strong>
+            </div>
+            <div class="card-body">
+                <form action="{% url 'requests:update_request_comment' request_.id request_comment_id %}" 
+                    method="POST">
+                    {% csrf_token %}
+
+                    <p>
+                        {% autoescape off %}
+                        {{ request_.company_name|linebreaks  }}
+                        {% endautoescape %}
+                    </p>
+                    <p>
+                        {% autoescape off %}
+                        {{ request_.contract_name }}
+                        {% endautoescape %}
+                    </p>
+
+                    <div class="row">
+                        <div class="col-6">
+                            {% if request_comment is None %}
+                                <input type="hidden" name="created_at" value="{% now 'c' %}">
+                            {% else %}
+                                <p><label for="comment_date mb-3"><b>Дата переговоров:</b></label>
+                                <input type="datetime-local" name="created_at" 
+                                        id="created_at" class="form-control" 
+                                        value="{{ request_comment.created_at|date:"c"}}">
+                                    </p>
+                            {% endif %}
+
+                            <p>
+                                <div class="mb-3"><b>{{ form.text.label }}</b></div>
+                                {{ form.text }}
+                            </p>
+                        </div>
+                        <div class="col-6">
+                            <h4>Напоминание</h4>
+                            <div class="form-group mb-3">
+                                <label for="reminder_id" class="form-label"></label>
+                                <select name="reminder[id]" id="reminder_id" class="form-control" required>
+                                    <option value="">-- Выберите напоминание --</option>
+									<option value="-1">Без напоминаний</option>
+									<option value="0">Создать новое</option>
+									<optgroup id="reminders" label="Существующие">
+                                        {% for request_reminder in request_reminders %}
+                                            <option value="{{ request_reminder.id }}" data-idx="{{ request_reminder.id }}">
+                                                {{ request_reminder.due_date|date:"d.m.Y" }} - {{ request_reminder.text }}
+                                            </option>
+                                        {% endfor %}
+                                    </optgroup>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <p>
+                                    {{ form.selected_reminder_due_date.label }}
+                                    {{ form.selected_reminder_due_date }}
+                                </p>
+                            </div>
+                            <div class="form-group">
+                                <p>
+                                    <div class="mb-3"><b>{{ form.selected_reminder_text.label }}</b></div>
+                                    {{ form.selected_reminder_text }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col">
+                            <p>
+                                {{ form.request_reminder_status }} <b>{{ form.request_reminder_status.label }}</b>
+                            </p>
+                            <p>
+                                <div class="mb-3"><b>{{ form.request_new_status_id.label }}</b></div>
+                                {{ form.request_new_status_id }}
+                            </p>
+                        </div>
+                        
+                    </div>
+                    
+                    <input type="submit" value="Сохранить" class="btn btn-primary">
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function change_reminder(e) {
+        var opt = $(this).find("option:selected");
+        var rid = opt.val();
+        var idx = Number(opt.data('idx'));
+
+        if (rid === '' || rid == '-1') {
+            $('#reminder_due_date, #reminder_text').attr('disabled', true).attr('required', false).val('');
+        } else if (rid == '0') {
+            $('#reminder_due_date, #reminder_text').attr('disabled', false).attr('required', true).val('');
+        } else {
+            let selected_value = document.querySelector('#reminder_id optgroup#reminders option[data-idx="' + this.value + '"]').innerText.trim();
+            let selected_value_arr = selected_value.split('-');
+            let date_arr = selected_value_arr[0].trim().split('.');
+            let date = (new Date(date_arr[2], date_arr[1], date_arr[0]));
+            let day = ("0" + date.getDate()).slice(-2);
+            let month = ("0" + date.getMonth()).slice(-2);
+            let date_ = date.getFullYear()+"-"+(month)+"-"+(day);
+            let text = selected_value_arr[1] ? selected_value_arr[1].trim() : "";
+
+            $('#reminder_due_date, #reminder_text').attr('disabled', false).attr('required', true).val('');
+            document.querySelector('#reminder_due_date').value = date_;
+            $('#reminder_text').val(text);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        $('#reminder_due_date, #reminder_text').attr('disabled', true).attr('required', false).val('');
+
+        $('#reminder_id').change(change_reminder);
+
+        tail.DateTime(".tail-datetime-field", {
+            dateFormat: 'dd.mm.YYYY',
+            timeFormat: 'HH:ii:ss',
+            locale: 'ru'
+        });
+    });
+</script>
+{% endblock %}
+
+

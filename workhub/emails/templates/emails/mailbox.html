@@ -1,0 +1,220 @@
+{% extends "base_templates/base.html" %}
+
+{% block title %} Почта {% endblock %}
+
+{% load static %}
+
+{% block content %}
+<link href="{% static 'css/main.css' %}" rel="stylesheet"/>
+
+<div class="container-fluid" style="margin-top: auto; margin-bottom: auto;">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'crm:index' %}">Главная</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Почта</li>
+        </ol>
+      </nav>
+
+        <div class="row">
+            <div class="col-md-12">
+                <ul class="nav nav-tabs" id="emailTabs" role="tablist">
+                    <li role="presentation" class="nav-item">
+                        <button class="nav-link active" 
+                                id="inbox-tab" 
+                                data-bs-toggle="tab" 
+                                data-bs-target="#inbox-tab-pane" 
+                                type="button" 
+                                role="tab" 
+                                aria-controls="inbox-tab-pane" 
+                                aria-selected="true">
+                                Входящие <span class="badge badge-info"></span>
+                        </button>
+                    </li>
+    
+                    <li role="presentation" class="nav-item">
+                        <button class="nav-link" 
+                                id="sended-emails-tab" 
+                                data-bs-toggle="tab" 
+                                data-bs-target="#sended-emails-tab-pane" 
+                                type="button" 
+                                role="tab" 
+                                aria-controls="sended-emails-tab-pane" 
+                                aria-selected="false">
+                                Отправленные <span class="badge badge-info"></span>
+                        </button>
+                    </li>
+    
+                    <li role="presentation" class="nav-item">
+                        <button class="nav-link" id="templates-tab" 
+                                data-bs-toggle="tab" 
+                                data-bs-target="#templates-tab-pane" 
+                                type="button" 
+                                role="tab" 
+                                aria-controls="templates-tab-pane" 
+                                aria-selected="false">
+                                Шаблоны <span class="badge badge-info"></span>
+                        </button>
+                    </li>
+                </ul>
+    
+                <div class="tab-content" id="emailTabsContent">
+                    <!-- Вкладка "Входящие" -->
+                    <div role="tabpanel" class="tab-pane fade show active bg-white" id="inbox-tab-pane" aria-labelledby="inbox-tab" tabindex="0">
+                        
+                        <div class="alert alert-primary">Входящие с почтового ящика <strong>ea503532@yandex.ru</strong></div>
+                        
+                        <table class="table">
+                            <thead>
+                            <tr>
+                                <th></th>
+                                <th>Дата</th>
+                                <th>От</th>
+                                <th>Карточка компании</th>
+                                <th style="width: 30%;">Тема письма</th>
+                                <th>Менеджер</th>
+                            </tr>
+                            </thead>
+                            <tbody id="yandex_emails">
+                            </tbody>
+                        </table>
+
+                        <script>
+                            let offset = 0;
+                            const limit = 25;
+
+                            async function loadMoreEmails() {
+                                const button = document.getElementById("load-more");
+                                button.disabled = true;
+                                button.innerText = "Загружаем...";
+
+                                try {
+                                    const response = await fetch(`/emails/load-more-emails/?offset=${offset}`);
+                                    const data = await response.json();
+                                    
+                                    if (data.emails.length === 0) {
+                                        button.innerText = "Больше нет писем";
+                                        return;
+                                    }
+
+                                    const container = document.getElementById("yandex_emails");
+
+                                    data.emails.forEach(email => {
+                                        const emailTr = document.createElement("tr");
+                                        emailTr.setAttribute("data-uid", email.uid);
+                                        emailTr.classList.add("email-row");
+                                        emailTr.innerHTML = `
+                                            <td></td>
+                                            <td>${email.date_sent}</td>
+                                            <td><strong>${email.sender_name}</strong><br> ${email.sender_email}</td>`
+                                        
+                                        if (typeof email.company.id !== "undefined" && typeof email.company.name !== "undefined") {
+                                            emailTr.innerHTML += `<td><a href='#'>${email.company.name}</a></td>`
+                                        } else {
+                                            emailTr.innerHTML += `<td></td>`
+                                        }
+                                        
+                                        emailTr.innerHTML += `<td>
+                                                <p><strong>Тема:</strong> ${email.subject}</p>
+                                                ${email.attachments.length > 0 
+                                                ? `<ul class="list-unstyled list-inline vertical-list">${email.attachments.map(file => `<li>${file}</li>`).join('')}</ul>
+                                                    <div id="email-body"></div></td>` : ''}`;
+                                                    // emailTr.innerHTML += 
+                                        
+                                        if (typeof email.company.id !== "undefined" && typeof email.company.name !== "undefined") {
+                                            emailTr.innerHTML += `<td>${email.manager}</a></td>`
+                                        } else {
+                                            emailTr.innerHTML += `<td></td>`;
+                                        }
+                                        container.appendChild(emailTr);
+                                    });
+
+                                    offset += limit;
+                                    button.innerText = "Загрузить еще";
+                                    button.disabled = false;
+                                } catch (error) {
+                                    console.error("Ошибка загрузки писем:", error);
+                                    button.innerText = "Ошибка, попробуйте снова";
+                                    button.disabled = false;
+                                }
+                            }
+
+                            async function loadEmailBody(message_id) {
+                                const response = await fetch(`/emails/load-email-body/?message_id=${message_id}`);
+                                const data = await response.json();
+                                const bodyContainer = document.getElementById("email-body");
+                                bodyContainer.innerHTML = `<p><strong>Тело письма:</strong></p><p>${data.body}</p>`;
+                            }
+
+                            // Загружаем первые письма при загрузке страницы
+                            window.onload = loadMoreEmails;
+                        </script>
+
+                        <div class="text-center">
+                            <button id="load-more" class="mb-4" onclick="loadMoreEmails()">Загрузить еще</button>
+                        </div>
+
+                        <!-- Всплывающее окно -->
+                        <div id="emailModal" class="modal">
+                            <div class="modal-content">
+                                <span class="close">&times;</span>
+                                <p id="emailBody">Загрузка...</p>
+                            </div>
+                        </div>
+                    </div>
+    
+                    <!-- Вкладка "Отправленные письма" -->
+                    <div role="tabpanel" class="tab-pane fade bg-white" id="sended-emails-tab-pane" aria-labelledby="sended-emails-tab" tabindex="0">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="alert alert-primary">
+                                    <p>Отправленные письма с ящика <strong>ea503532@yandex.ru</strong></p>
+                                    <p>Вы можете создать новое письмо на странице <a href="search_company.php">поиска компаний</a>
+                                        или в карточке компании, нажав на ссылку с почтовым адресом компании.
+                                    </p>
+                                </div>
+                            
+                                <table class="table">
+                                    <thead>
+                                    <tr>
+                                        <th style="width: 5%;">#</th>
+                                        <th style="width: 45%;">Тема / Регионы</th>
+                                        <th style="width: 15%;">Автор</th>
+                                        <th style="width: 10%;">Дата создания</th>
+                                        <th style="width: 15%;">Дата отправки</th>
+                                        <th style="min-width: 80px"></th>
+                                    </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+    
+                    <!-- Вкладка "Шаблоны" -->
+                    <div role="tabpanel" class="tab-pane fade bg-white" id="templates-tab-pane" aria-labelledby="templates-tab" tabindex="0">
+                        <div style="margin-bottom: 20px">
+                            <a href="" class="btn btn-primary">
+                                <i class="glyphicon glyphicon-plus"></i>&nbsp;<b>Создать шаблон</b>
+                            </a>
+                        </div>
+
+                        <table class="table">
+                            <thead>
+                            <tr>
+                                <th style="width: 5%">#</th>
+                                <th style="width: 15%">Дата создания</th>
+                                <th style="width: 60%">Шаблон</th>
+                                <th style="width: 60%">Создал(а)</th>
+                                <th style="width: 8%"></th>
+                            </tr>
+                            </thead>
+                            <tbody id="emails_templates">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+</div>
+<script src="{% static 'js/emails.js' %}"></script>
+{% endblock %}

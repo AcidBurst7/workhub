@@ -1,0 +1,132 @@
+
+
+{% extends "base_templates/base.html" %}
+
+{% block title %} Поиск по переговорам {% endblock %}
+
+{% load static %}
+
+{% block content %}
+
+<link href="{% static 'css/main.css' %}" rel="stylesheet"/>
+
+<div class="container-fluid" style="margin-top: auto; margin-bottom: auto;">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'crm:index' %}">Главная</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'company:search' %}">Поиск компаний</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Поиск по переговорам</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex p-3">
+        <div class="col-xs-12 col-sm-12 col-md-4 col-4 bg-light p-3 align-self-start rounded">
+            <div class="panel panel-default">
+                <div class="panel-heading"><h4><b>Параметры поиска</b></h4></div>
+                <hr>
+                <div class="panel-body">
+                    <table class='table'>
+                        <tr style="background-color: #ddd;">
+                            <th>Параметр</th>
+                            <th>Значение</th>
+                        </tr>
+                        <form action="" method="POST">
+                            {{ search_form.as_table}}
+                            {% csrf_token %}
+                            
+                            <tr>
+                                <td colspan='2'>
+                                    <input type="submit" name="poisk" value="Поиск"
+                                        class="btn btn-primary btn-lg btn-block w-100">
+                                </td>
+                            </tr>
+                        </form>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xs-12 col-sm-12 col-md-8 col-8 bg-light p-3 rounded">
+            <div class="panel panel-default">
+                <div class="panel-heading"><h4><b>Перечень найденных переговоров</b></h4></div>
+                <hr>
+                <div class="panel-body">
+                    <p><i>* Вывод имеющихся переговоров осуществляется в обратном хронологическом порядке по <?= $limit ?> штук в
+                        блоке. Нажмите "Загрузить еще", чтобы проверить наличие других переговоров. Для осуществления
+                        операций над переговорами - перейдите в карточку компании.</i></p>
+                    
+                    <p><strong>Всего записей: {{ comments_list_count }}</strong></p>
+                    <table class='table' id="comments_table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Дата переговоров</th>
+                                <th>Наименование компании</th>
+                                <th>Текст комментария</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comments_table_body">
+                            {% include 'comments/pages/partials/search_comments.html' %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            {% if comments_list_count > 0%}
+            <div class="text-center" id="load-more-block">
+                <button id="load-more" class="btn btn-primary">
+                    Загрузить еще
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block domready %}
+var page = 1;
+var emptyPage = false;
+var blockRequest = false;
+const url = '{% url "comments:search_comments_only" %}'
+var options = {
+    method: 'POST',
+    headers: {'X-CSRFToken': csrftoken},
+    mode: 'same-origin'
+}
+
+document.querySelector('button#load-more').addEventListener('click', function(e) {
+    e.preventDefault();
+
+    blockRequest = true;
+    page += 1;
+    var formData = new FormData();
+    formData.append('date_comment_from', document.querySelector('input[name="date_comment_from"]').value);
+    formData.append('date_comment_to', document.querySelector('input[name="date_comment_to"]').value);
+    formData.append('name_company', document.querySelector('input[name="name_company"]').value);
+    formData.append('status_job', document.querySelector('select[name="status_job"]').value);
+    formData.append('comment_result', document.querySelector('select[name="comment_result"]').value);
+    formData.append('text_comment', document.querySelector('input[name="text_comment"]').value);
+    formData.append('users', document.querySelector('select[name="users"]').value);
+    formData.append('limit', document.querySelector('select[name="limit"]').value);
+
+    options['body'] = formData;
+    fetch(url + '?comments_only=1&page=' + page, options)
+    .then(response => response.text())
+    .then(html => {
+        if (html == '') {
+            document.querySelector('#load-more-block > button').style.display = "none";
+            document.querySelector('#load-more-block').innerHTML = "<strong>Больше записей нет.</strong>";
+        } else {
+            document.querySelector('table#comments_table > tbody > tr:last-child').insertAdjacentHTML('afterend', html);
+            let table = document.querySelectorAll('table#comments_table > tbody tr');
+            console.log(table.length);
+            let tableLineCounter = 1;
+            for (let elem of table) {
+                elem.querySelector('td:first-child').innerHTML = tableLineCounter;
+                tableLineCounter++;
+              }
+        }
+    })
+})  
+{% endblock %}

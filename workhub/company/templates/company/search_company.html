@@ -1,0 +1,228 @@
+{% extends "base_templates/base.html" %}
+{% block title %}Поиск компании{% endblock %}
+{% load user_groups %}
+{% load static %}
+{% block content %}
+<style>
+    .region {
+        white-space: nowrap;
+    }
+
+    .region label, .filtr-project label {
+        display: inline;
+        font-weight: normal;
+    }
+
+    .region > input:checked + label {
+        font-weight: bold;
+    }
+
+    .text-bold {
+        font-weight: bold !important;
+    }
+</style>
+<div class="container-fluid">
+    <ol class="breadcrumb">
+        <li><a href="{% url 'crm:index' %}">Главная</a></li>
+        <li>Поиск компаний</li>
+    </ol>
+
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="panel panel-default">
+                <div class="panel-heading"><b>Параметры поиска</b></div>
+                <div class="panel-body">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <p style="text-align:right">
+                                    <a href="{% url 'company:create' %}" class="btn btn-primary">
+                                        <span class="bi bi-plus"></span>&nbsp;
+                                        <b>Добавить компанию</b>
+                                    </a>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form action="{% url 'company:action_search' %}" method="POST">
+                        {% csrf_token %}
+
+                        <table class="table">
+                            <th>Название предприятия:</th>
+                            <th>№ предприятия:</th>
+                            <th style="width: 25%;">Содержание:</th>
+                            <tr>
+                                <td>{{ search_form.name_company }}</td>
+                                <td>{{ search_form.identificator_company }}</td>
+                                <td>
+                                    <div class="filtr-project">
+                                        <p>
+                                            {{ search_form.project_more_content}}
+                                        </p>
+                                        <label>
+                                            {{ search_form.project_more_content_by_info }}
+                                            <span class="filtr-project-label">по информации&nbsp;&nbsp;</span>
+                                        </label>
+                                        <label>
+                                            {{ search_form.project_more_content_by_price }}
+                                            <span class="filtr-project-label">по цене</span>
+                                        </label>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                        <table class="table">
+                            <tr>
+                                <td style="width: 25%;">
+                                    <input type="text" name="region_filter" id="region_filter" placeholder="Субъект РФ:" style="width: 100%;">
+                                    <div style="padding-top: 5px">
+                                        <span>Сортировка по </span>&nbsp;
+                                        <input type="hidden" id="region-sort-by-name-input" value="region-name-asc">
+                                        <input type="hidden" id="region-sort-by-timezone-input" value="">
+
+                                        <a id='region-sort-by-name' href="#" aria-hidden="region-name-asc">
+                                            алфавиту
+                                            <i style="display: inline" class='bi bi-sort-down-alt region-name-sort-asc fs-5 fw-bold'></i>
+                                            <i style="display: none" class='bi bi-sort-down region-name-sort-desc fs-5 fw-bold'></i>
+                                        </a>&nbsp;
+                                        <a id='region-sort-by-timezone' href="#" aria-hidden="">
+                                            часовому поясу
+                                            <i style="display: none" class='bi bi-sort-down-alt region-timezone-sort-asc fs-5 fw-bold'></i>
+                                            <i style="display: none" class='bi bi-sort-down region-timezone-sort-desc fs-5 fw-bold'></i>
+                                        </a>
+                                    </div>
+                                </td>
+                                <td style="width: 20%;"><b>Статус работы:</b></td>
+                                <td style="width: 20%;"><b>Тип организаций:</b></td>
+                                <td style="width: 15%;"><b>Проект:</b></td>
+                                <td style="width: 15%;"><b>Статус проекта:</b></td>
+                            </tr>
+                            <tr>
+                                <!-- Фильтр "Субъект РФ" -->
+                                <td>
+                                    <div class="filtr" id="region-filtr" style="overflow-y: scroll; height: 300px;"></div>
+                                </td>
+
+                                <!-- Фильтр "Статус работы" -->
+                                <td><div class="filtr">{{ search_form.company_status }}</div></td>
+
+                                <!-- Фильтр "Тип организаций" -->
+                                <td><div class="filtr">{{ search_form.company_type }}</div></td>
+
+                                <!-- Фильтр "Проект" -->
+                                <td><div class="filtr filtr-project">{{ search_form.company_project }}</div></td>
+
+                                <!-- Фильтр "Статус проекта" -->
+                                <td><div class="filtr filtr-project">{{ search_form.company_project_status }}</div></td>
+                            </tr>
+                            <th>Главная карточка</th>
+                            {% if request.user|has_group:"director"  %}
+                                <th>ФИО менеджера:</th>
+                            {% endif %}
+
+                            <th>Количество записей</th>
+                            {% if request.user|has_group:"director" or request.user|has_group:"manager" %}
+                                <th colspan="2"></th>
+                            {% endif %}
+                            <tr>
+                                <td>{{ search_form.is_primary }}</td>
+                                
+                                {% if request.user|has_group:"director"  %}
+                                    <td>{{ search_form.company_manager_name }}</td>
+                                {% else %}
+                                    <input type="hidden" name="name_manager" value="{{ request.user.id }}">
+                                {% endif %}
+
+                                <td>{{ search_form.limit }}</td>
+                                {% if request.user|has_group:"director" or request.user|has_group:"manager" %}
+                                    <td colspan="2">
+                                        <ul>
+                                            {% if lost_user_companies_count > 0 %}
+                                                <li class="losts-list">
+                                                    <a href="#" class="losts-list__menu-btn">
+                                                        Потерянных: {{ lost_user_companies_count }}
+                                                    </a>
+                                                    <ul style="display: none">
+                                                        {% for user_id, line in lost_user_companies_list.items %}
+                                                            <li>
+                                                                <a href="#" class="losts-list__username-btn">
+                                                                    {{ line.name }}
+                                                                </a>
+                                                                <ul style="display: none">
+                                                                    {% for key, lost_user_companies_line_lost in line.lost.items %}
+                                                                        <li>
+                                                                            <a target="_blank" 
+                                                                                href="{% url 'company:search_result' %}?companies_list={{ lost_user_companies_line_lost.companies|join:','|urlencode }}">
+                                                                                {{ lost_user_companies_line_lost.status_name }}
+                                                                                ({{ lost_user_companies_line_lost.companies|length }})
+                                                                            </a>
+                                                                        </li>
+                                                                    {% endfor %}
+                                                                </ul>
+                                                            </li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                </li>
+                                            {% endif %}
+                                        </ul>
+                                    </td>
+                                {% endif %}
+                            </tr>
+                        </table>
+                        <div>
+                            <br>
+                            <input type="submit" name="poisk" value="НАЙТИ" class="btn btn-primary btn-lg btn-block w-100"/>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock%}
+
+{% block domready %}
+let options = {
+    method: 'POST',
+    headers: {'X-CSRFToken': csrftoken},
+    mode: 'same-origin'
+}
+
+let selected_regions = 0;
+//selected_regions = selected_regions.split(',')
+const action_region_filter_url = '{% url "company:action_region_filter" %}'
+
+get_regions_filter_list();
+
+if (document.querySelector('.losts-list__menu-btn')) {
+    document.querySelector('.losts-list__menu-btn').addEventListener('click', function (e) {
+        e.preventDefault();
+
+        if (e.target.nextElementSibling.style.display == 'block') {
+            e.target.nextElementSibling.style.display = 'none';
+        } else {
+            e.target.nextElementSibling.style.display = 'block';
+        }
+    });
+}
+
+if (document.querySelector('.losts-list__username-btn')) {
+    document.querySelectorAll('.losts-list__username-btn').forEach(function (el) {
+        el.addEventListener('click', function (e) {
+            e.preventDefault();
+
+            if (e.target.nextElementSibling.style.display == 'block') {
+                e.target.nextElementSibling.style.display = 'none';
+            } else {
+                e.target.nextElementSibling.style.display = 'block';
+            }
+        });
+    });
+}
+{% endblock %}
+
+{% block extra_scripts %}
+{{ block.super }}
+<script src="{% static 'js/region_filter.js' %}"></script>
+{% endblock %}

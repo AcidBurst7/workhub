@@ -1,0 +1,130 @@
+
+
+{% extends "base_templates/base.html" %}
+
+{% block title %} Поиск по заявкам {% endblock %}
+
+{% load static %}
+
+{% block content %}
+
+<link href="{% static 'css/main.css' %}" rel="stylesheet"/>
+
+<div class="container-fluid" style="margin-top: auto; margin-bottom: auto;">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'crm:index' %}">Главная</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'company:search' %}">Поиск компаний</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Поиск по заявкам</li>
+        </ol>
+      </nav>
+
+    <div class="d-flex p-3">
+        <div class="col-xs-12 col-sm-12 col-md-4 col-4 bg-light-subtle p-3 align-self-start rounded" style="margin-right: 20px">
+            <div class="panel panel-default">
+                <div class="panel-heading"><h4><b>Параметры поиска</b></h4></div>
+                <hr>
+                <div class="panel-body">
+                    <table class='table'>
+                        <tr style="background-color: #ddd;">
+                            <th>Параметр</th>
+                            <th>Значение</th>
+                        </tr>
+                        <form action="" method="POST">
+                            {{ search_form.as_table}}
+                            {% csrf_token %}
+                            
+                            <tr>
+                                <td colspan='2'>
+                                    <input type="submit" name="poisk" value="Поиск"
+                                        class="btn btn-primary btn-lg btn-block w-100">
+                                </td>
+                            </tr>
+                        </form>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xs-12 col-sm-12 col-md-8 col-8 bg-light-subtle p-3 rounded">
+            <div class="panel panel-default">
+                <div class="panel-heading"><h4><b>Перечень найденных напоминаний</b></h4></div>
+                <hr>
+                <div class="panel-body">
+                    <p><i>*Вывод имеющихся заявок осуществляется в обратном хронологическом порядке по 15 штук в блоке. Нажмите "Загрузить еще", чтобы проверить наличие других заявок.</i></p>
+                    
+                    <p><strong>Всего записей: {{ reminders_by_requests_list_count }}</strong></p>
+                    <table class='table' id="reminders_by_requests_table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Дата</th>
+                                <th>Наименование компании</th>
+                                <th>Название заявки</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="reminders_by_requests_table_body">
+                            {% include 'reminders/pages/partials/search_reminders_by_requests.html' %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="text-center" id="load-more-block">
+                <button id="load-more" class="btn btn-primary">
+                    Загрузить еще
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block domready %}
+var page = 1;
+var emptyPage = false;
+var blockRequest = false;
+const url = '{% url "reminders:search_reminders_by_requests_only" %}'
+var options = {
+    method: 'POST',
+    headers: {'X-CSRFToken': csrftoken},
+    mode: 'same-origin'
+}
+
+if (document.querySelector('button#load-more')) {
+    document.querySelector('button#load-more').addEventListener('click', function(e) {
+        e.preventDefault();
+
+        blockRequest = true;
+        page += 1;
+        var formData = new FormData();
+        formData.append('date_comment_from', document.querySelector('input[name="date_from"]').value);
+        formData.append('date_comment_to', document.querySelector('input[name="date_to"]').value);
+        formData.append('regions', document.querySelector('select[name="regions"]').value);
+        formData.append('name_company', document.querySelector('input[name="name_company"]').value);
+        formData.append('status_job', document.querySelector('select[name="status_job"]').value);
+        formData.append('director', document.querySelector('input[name="director"]').value);
+        formData.append('users', document.querySelector('select[name="users"]').value);
+        
+        options['body'] = formData;
+        fetch(url + '?reminders_by_requests_only=1&page=' + page, options)
+        .then(response => response.text())
+        .then(html => {
+            if (html == '') {
+                document.querySelector('#load-more-block > button').style.display = "none";
+                document.querySelector('#load-more-block').innerHTML = "<strong>Больше записей нет.</strong>";
+            } else {
+                document.querySelector('#reminders_by_requests_table_body > tr:last-child').insertAdjacentHTML('afterend', html);
+                let table = document.querySelectorAll('#reminders_by_requests_table_body tr');
+                let tableLineCounter = 1;
+                for (let elem of table) {
+                    elem.querySelector('td:first-child').innerHTML = tableLineCounter;
+                    tableLineCounter++;
+                }
+            }
+        })
+    })
+}
+
+{% endblock %}

@@ -1,0 +1,20 @@
+
+{% if reminders %}
+{% for reminder in reminders %}
+    <tr><td>{{ forloop.counter }}</td>
+        <td>{{ reminder.date_reminder|date:"d.m.Y" }}</td>
+        <td><a href="{{ reminder.id_company }}">{{ reminder.company.name_company }}</a></td>
+        <td>
+            {% autoescape off %}
+                {{ reminder.reminder|linebreaks|truncatechars:500|urlize  }}
+            {% endautoescape %}
+        </td>
+    </tr>
+{% endfor %}
+{% else %}
+<tr>
+    <td colspan="4"><p class="text-center">Больше записей нет</h3></td>
+</tr>
+{% endif %}
+
+

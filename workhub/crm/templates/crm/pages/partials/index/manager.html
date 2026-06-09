@@ -1,0 +1,121 @@
+{% load static %}
+        
+<div class="col-xs-12 col-sm-6 col-md-3" align="center">
+    <a href="{% url 'company:search' %}">
+        <div class="thumbnail">
+            <img class="main-menu__image" src="{% static 'img/calendar.png' %}" alt="Меню">
+            <div class="caption">
+                <h3>КАЛЕНДАРЬ</h3>
+                <p>напоминания в календаре</p>
+            </div>
+        </div>
+    </a>
+</div>
+
+<div class="col-xs-12 col-sm-6 col-md-3" align="center">
+    <a href="{% url 'crm:tasks' %}">
+        <div class="thumbnail">
+            <div class="position-relative">
+                <span class="badge position-absolute top-0 start-50 rounded-pill" 
+                      style="position: absolute; font-size:18px; 
+                {% if tasks_count > 0 and important_tasks_count > 0 and tasks_count == important_tasks_count %} background:red;"
+                    title="Важных {{ important_tasks_count }}">{{ important_tasks_count }}
+                {% elif  tasks_count > 0 and important_tasks_count > 0 and tasks_count != important_tasks_count %} background:red;"
+                    title="Важных {{ important_tasks_count }} из {{ tasks_count }}">{{ tasks_divide }}
+                {% elif tasks_count > 0 and important_tasks_count == 0 %} background:gray;" 
+                    title="Задач {{ tasks_count }}">{{ tasks_count }}
+                {% endif %}
+                </span>
+            </div>
+            <img class="main-menu__image" src="{% static 'img/tasks.png' %}" alt="Меню">
+            <div class="caption">
+                <h3>МОИ ЗАДАЧИ</h3>
+                <p>просмотр назначенных задач</p>
+            </div>
+        </div>
+    </a>
+</div>
+
+<div class="col-xs-12 col-sm-6 col-md-3" align="center">
+    <a href="{% url 'crm:tasks_pom' %}">
+        <div class="thumbnail">
+            <div class="position-relative">
+                <span class="badge position-absolute top-0 start-50 rounded-pill" style="position: absolute; background:red; font-size:18px; ">
+                    {{ tasks_pom_count }}
+                </span>
+                <img class="main-menu__image" src="{% static 'img/tasks.png' %}" alt="Меню">
+            </div>
+            <div class="caption">
+                <h3>ЗАДАЧИ для ПОМОЩНИКОВ</h3>
+                <p></p>
+            </div>
+        </div>
+    </a>
+</div>
+
+<div class="col-xs-12 col-sm-6 col-md-3" align="center">
+    <a href="{% url 'company:search' %}">
+        <div class="thumbnail">
+            <img class="main-menu__image" src="{% static 'img/search1.png' %}" alt="Меню">
+            <div class="caption">
+                <h3>ПОИСК ОРГАНИЗАЦИЙ</h3>
+                <p>поиск карточек организаций по параметрам</p>
+            </div>
+        </div>
+    </a>
+</div>
+
+<div class="col-xs-12 col-sm-6 col-md-3" align="center">
+    <a href="{% url 'comments:search_comments' %}">
+        <div class="thumbnail">
+            <img class="main-menu__image" src="{% static 'img/search2.png' %}" alt="Меню">
+            <div class="caption">
+                <h3>ПОИСК ПЕРЕГОВОРОВ</h3>
+                <p>поиск переговоров сотрудников с организациями</p>
+            </div>
+        </div>
+    </a>
+</div>
+
+<div class="col-xs-12 col-sm-6 col-md-3" align="center">
+    <a href="{% url 'reminders:search_reminders' %}">
+        <div class="thumbnail">
+            <div class="position-relative">
+                {% if reminders_count > 0 %}
+                    <span class="badge position-absolute top-0 start-50 rounded-pill" style="position: absolute; background:red; font-size:18px; ">
+                        {{ reminders_count }}
+                    </span>
+                {% endif %}
+                <img class="main-menu__image" src="{% static 'img/idea.png' %}" alt="Меню">
+            </div>
+            <div class="caption">
+                <h3>ПОИСК НАПОМИНАНИЙ</h3>
+                <p>поиск Ваших напоминаний по работе c организациями</p>
+            </div>
+        </div>
+    </a>
+</div>
+
+<div class="col-xs-12 col-sm-6 col-md-3" align="center">
+    <a href="{% url 'crm:requests' %}">
+        <div class="thumbnail">
+            <img class="main-menu__image" src="{% static 'img/statistics.png' %}" alt="Меню">
+            <div class="caption">
+                <h3>ЗАЯВКИ</h3>
+                <p>просмотр заявок</p>
+            </div>
+        </div>
+    </a>
+</div>
+
+<div class="col-xs-12 col-sm-6 col-md-3" align="center">
+    <a href="{% url 'emails:email_list' %}">
+        <div class="thumbnail">
+            <img class="main-menu__image" src="{% static 'img/email.png' %}" alt="Меню">
+            <div class="caption">
+                <h3>ПОЧТА</h3>
+                <p>email-сообщения / шаблоны / просмотр почты</p>
+            </div>
+        </div>
+    </a>
+</div>

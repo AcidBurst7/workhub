@@ -1,0 +1,52 @@
+{% extends "base_templates/base.html" %}
+{% block title %}Заявка{% endblock %}
+{% load user_groups %}
+{% load static %}
+{% block content %}
+<div class="container-fluid" style="margin-top: auto; margin-bottom: auto;">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'crm:index' %}">Главная</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'reminders:search_reminders_by_requests' %}">Заявки</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
+        </ol>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row card">
+            <div class="card-header">
+                Напоминание к заявке
+            </div>
+            <div class="card-body">
+                <form id="view_request" 
+                    action="{% url 'requests:update_request_reminder' request_.id request_reminder_id %}" 
+                    method="POST">
+                    {% csrf_token %}
+
+                    <p>
+                        {% autoescape off %}
+                        {{ request_.company_name|linebreaks  }}
+                        {% endautoescape %}
+                    </p>
+                    <p>
+                        {% autoescape off %}
+                        {{ request_.contract_name }}
+                        {% endautoescape %}
+                    </p>
+                    
+                    {% for field in form %}
+                    <p>
+                        <div class="mb-3"><b>{{ field.label }}</b></div>
+                        {{ field }}
+                    </p>
+                    {% endfor %}
+
+                    <input type="submit" value="Сохранить" class="btn btn-primary">
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

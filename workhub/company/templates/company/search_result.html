@@ -1,0 +1,438 @@
+{% extends "base_templates/base.html" %}
+{% block title %}Поиск компании{% endblock %}
+{% load user_groups %}
+{% load static %}
+{% block content %}
+<style>
+    body {
+        font: 13px/150% Helvetica, 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    }
+
+    .commentBlock {
+        width: 500px;
+        margin: 10px auto;
+        border-bottom: 1px solid #999;
+    }
+
+    .name {
+        font-weight: 700;
+    }
+
+    #load {
+        width: 120px;
+        height: 30px;
+        text-align: center;
+        margin: 10px auto;
+
+    }
+
+    #load div {
+        margin: 5px;
+        cursor: pointer;
+        background: #6483aa;
+        color: #fff;
+        padding: 4px 10px 4px 10px;
+        border: 1px solid #2f4561;
+        -webkit-border-radius: 2px;
+        -moz-border-radius: 2px;
+        border-radius: 2px;
+    }
+    .multiselect {
+        text-align: left;
+    }
+    .multiselect b.caret {
+        position: absolute;
+        top: 14px;
+        right: 8px;
+    }
+    .multiselect-group {
+        font-weight: bold;
+        text-decoration: underline;
+    }
+    .projects-filter .btn-group{
+        min-width: 150px;
+        width: 100% !important;
+    }
+    .projects-filter .btn-group > button.dropdown-toggle {
+        min-width: 150px;
+        width: 100%;
+    }
+</style>
+<div class="container-fluid">
+    <ol class="breadcrumb">
+        <li><a href="{% url 'crm:index' %}">Главная</a></li>
+        <li><a href="{% url 'company:search' %}">Поиск компаний</a></li>
+        <li class="active">Найденные компании</li>
+    </ol>
+
+    <form id="form_bulk" action="{% url 'company:process_mass_actions' %}" method="post">
+        {% csrf_token %}
+
+        {{ search_post_data|json_script:"search-form-data" }}
+        <!-- Вывод компаний -->
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading"><b>Перечень найденных компаний</b></div>
+                    <div class="panel-body">
+                        <table class="table" id="companies_table">
+                            <thead>
+                            <tr>
+                                <th>№</th>
+                                <th>
+                                    {% if request.user|has_group:"director" %}
+                                        <a href="#check_all" id="check_all">Всё</a>
+                                    {% else %}
+                                        #
+                                    {% endif %}
+                                </th>
+                                <th style="width: 45%">Наименование компании</th>
+                                <th style="width: 15%">Проекты</th>
+                                <th style="width:10em;">
+                                    <a id="status-order" href="#" aria-hidden="{{ status_order }}">
+                                        Статус
+                                        <i style="display: none"
+                                            class='glyphicon glyphicon-sort-by-attributes neighbours-status-asc'></i>
+                                        <i style="display: none"
+                                            class='glyphicon glyphicon-sort-by-attributes-alt neighbours-status-desc'></i>
+                                    </a>
+                                </th>
+                                <th>Ответственный менеджер</th>
+                                <th>Действия</th>
+                            </tr>
+                            </thead>
+                            <tbody id="list">
+                                {% include 'company/partials/search_result.html' %}
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Массовые действия -->
+        {% if request.user|has_group:"director" %}
+        <div class="well mt-3">
+            <div class="card">
+                <div class="card-header"><b>Массовые действия</b></div>
+                <div class="card-body">
+                    <!-- Выпадающий список "Менеджер" -->
+                    <!-- ВЫпадающий список "Статус" -->
+                    <!-- Чекбокс "Удалить выбранных" -->
+                    <div class="row mb-3">
+                        <div class="col-sm-6 col-md-3">
+                            <div class="form-group">
+                                <select name="manager" id="manager" class="form-control">
+                                    <option value="0">Менеджер</option>
+                                    {% for manager in managers %}
+                                        <option value="{{manager.id_user}}">{{ manager.fio }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-sm-6 col-md-3">
+                            <div class="form-group">
+                                <select name="status" id="status" class="form-control">
+                                    <option value="0">Статус</option>
+                                    {% for company_status in company_statuses %}
+                                        <option value="{{ company_status.id_status_job }}">{{ company_status.name_status }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-sm-6 col-md-3">
+                            <div class="checkbox text-left">
+                                <label for="delete">
+                                    <input type="checkbox" name="delete" id="delete" value="1"> Удалить выбранных
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Кнопки "Сохранить" и "Отправить письма" -->
+                    <div class="row">    
+                        <div class="col-sm-8 col-md-6">
+                            <div class="text-left">
+                                <input type="submit" name="bulk_actions" 
+                                        id="bulk_actions" value="Сохранить"
+                                        class="btn btn-primary">
+                                <input type="submit" name="send_email" 
+                                        id="send_email" value="Отправить письма"
+                                        class="btn btn-info">
+                            </div>
+                        </div>
+                    </div>
+    
+                    <hr>
+    
+                    <!-- НАЧАЛО Изменение информации по проекту -->
+                    <div class="row">
+                        <div class="col-sm-6 col-md-6">
+                            <!-- Выпадающий список "Тип проекта -->
+                            <div class="form-group projects-filter">
+                                <select name="projects[]" id="projects-select"
+                                        data-placeholder="Выберите проект"
+                                        multiple="multiple" class="form-control">
+                                        <option value="" disabled>Выберите проект</option>
+                                    {% for project in projects %}
+                                        <option value="{{ project.id }}">{{ project.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Выпадающий список "Статус проекта" -->
+                            <div class="form-group">
+                                <select name="status_id" id="status_id" class="form-control">
+                                    <option value="">Выберите статус проекта</option>
+                                    {% for projects_status in projects_statuses %}
+                                        <option value="{{ projects_status.id }}">{{ projects_status.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Поле "Информация по проекту" -->
+                            <div class="form-group">
+                                <input type="text" name="more" id="more" class="form-control"
+                                        placeholder="Информация по проекту">
+                            </div>
+
+                            <!-- Кнопки "Изменить статус проекты" -->
+                            <div class="form-group text-left">
+                                <input type="submit"
+                                        name="bulk_projects_statuses_actions"
+                                        id="bulk_projects_statuses_actions"
+                                        value="Изменить информацию в проектах"
+                                        class="btn btn-primary">
+                            </div>
+                        </div>
+
+                        <!-- Создание комментария -->
+                        <div class="col-sm-6 col-md-6">
+                            <div class="form-group">
+                                <textarea name="comany_comment" class="form-control"
+                                            id="comany_comment" cols="30" rows="4"
+                                            placeholder="Текст переговора"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <div class="checkbox">
+                                    <label for="comany_comment_result">
+                                        <input type="checkbox" name="comany_comment_result"
+                                                id="comany_comment_result" value="1">
+                                        Результативный звонок
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <input type="submit"
+                                        name="bulk_company_commentaries_actions"
+                                        id="bulk_company_commentaries_actions"
+                                        value="Массовое создание комментариев"
+                                        class="btn btn-primary">
+                            </div>
+                        </div>
+                    </div>
+                    <!-- КОНЕЦ Изменение информации по проекту -->
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </form>
+
+    {% if request.user|has_group:"director" %}
+    <div class="well mt-3">
+        <div class="card">
+            <div class="card-header"><b>Выгрузка отчетов</b></div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-12">
+                        <!-- <h3 style="padding-bottom: 10px;">Выгрузка отчетов</h3> -->
+                        <form action="{% url 'company:save_companies_to_excel' %}" method="post">
+                            {% csrf_token %}
+                            <button type="button" id="save_companies_to_excel" class="btn btn-outline-dark">
+                                <img src="{% static 'img/excel-icon.png' %}" 
+                                    alt="" width="20" height="20">
+                                Отчет "Клиенты"
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if companies_ids == '' %}
+        <div id="load">
+            <div>Загрузить еще</div>
+            <img src="{% static 'img/loading.gif' %}" 
+                id="imgLoad" style="display: none;">
+        </div>
+    {% endif %}
+</div>
+{% endblock%}
+
+{% block domready %}
+var page = 1;
+var emptyPage = false;
+var blockRequest = false;
+const url = '{% url "company:action_search" %}'
+const generate_company_excel_url = '{% url "company:save_companies_to_excel" %}'
+const search_form_values = JSON.parse(document.getElementById('search-form-data').textContent);
+let limit = search_form_values["limit"];
+let offset_status = 0;
+let offset = limit;
+clear_search_company_search_query('delete', search_form_values["ch_regions[]"], 'statistics.php');
+
+var options = {
+    method: 'POST',
+    headers: {'X-CSRFToken': csrftoken },
+    mode: 'same-origin'
+}
+
+$('#check_all').click(function (e) {
+    e.stopPropagation();
+    e.preventDefault();
+
+    document.querySelectorAll('#content input[type=checkbox]').forEach(function (element) {
+        element.checked = !element.checked;
+    });
+});
+
+document.querySelector('#load div').addEventListener('click', function(e) {
+    e.preventDefault();
+
+    blockRequest = true;
+    page += 1;
+
+    document.querySelector('#imgLoad').style.display = 'block';
+
+    var formData = new FormData();
+    Object.entries(search_form_values).forEach(function([key, value]) {
+        formData.append(key, value);
+    });
+
+    options['body'] = formData;
+    fetch(url + '?companies_only=1&offset=' + offset, options)
+    .then(response => response.text())
+    .then(html => {
+        if (html != '') {
+            document.querySelector('table#companies_table > tbody > tr:last-child').insertAdjacentHTML('afterend', html);
+            let table = document.querySelectorAll('table#companies_table > tbody tr');
+            let tableLineCounter = 1;
+            for (let elem of table) {
+                elem.querySelector('td:first-child').innerHTML = tableLineCounter;
+                tableLineCounter++;
+            }
+            offset_status = parseInt(offset);
+            offset = parseInt(offset) + parseInt(limit);
+        }
+        document.querySelector('#imgLoad').style.display = 'none';
+    });
+});
+
+{% if request.user|has_group:"director" %}
+    if (document.querySelector('#save_companies_to_excel')) {
+        document.querySelector('#save_companies_to_excel').addEventListener('click', (e) => {
+            var options_search_form_values = {
+                method: 'POST',
+                headers: {'X-CSRFToken': csrftoken },
+                mode: 'same-origin'
+            }
+
+            var lines = [];
+            var search_company_form_data = new FormData();
+            
+            document.querySelectorAll('input[name="companies[]"]:checked').forEach(function (e) {
+                lines.push(e.value);
+            });
+            if (lines.length > 0) {
+                search_company_form_data.append('company', lines.join(','));
+            } else {
+                Object.entries(search_form_values).forEach(function([key, value]) {
+                    search_company_form_data.append(key, value);
+                });
+            }
+            options['body'] = search_company_form_data;
+            fetch(generate_company_excel_url, options)
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `report-companies_${new Date().toISOString().slice(0, 10)}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            }).catch(error => {
+                console.error('Ошибка при скачивании файла:', error);
+            });
+        });
+    }
+
+    document.querySelector('#send_email').addEventListener('click', () => {
+        let form = document.querySelector('#form_bulk').action = "edit_email.php";
+    });
+
+    let status_order = "asc";
+    document.querySelector('#status-order').addEventListener('click', (e) => {
+        e.preventDefault();
+        if (e.target.ariaHidden == "desc") {
+            e.target.ariaHidden = "asc";
+            $('.neighbours-status-desc').css('display', 'none');
+            $('.neighbours-status-asc').css('display', 'inline');
+        } else {
+            e.target.ariaHidden = "desc";
+            $('.neighbours-status-desc').css('display', 'inline');
+            $('.neighbours-status-asc').css('display', 'none');
+        }
+
+        status_order = e.target.ariaHidden;
+
+        fetch(url + '?companies_only=1&page=' + page, options)
+        .then(response => response.text())
+        .then(html => {
+            if (html != '') {
+                document.querySelector('table#companies_table > tbody > tr:last-child').insertAdjacentHTML('afterend', html);
+                let table = document.querySelectorAll('table#companies_table > tbody tr');
+                let tableLineCounter = 1;
+                for (let elem of table) {
+                    elem.querySelector('td:first-child').innerHTML = tableLineCounter;
+                    tableLineCounter++;
+                }
+            }
+            document.querySelector('#imgLoad').style.display = 'none';
+        });
+        
+        $.ajax({
+            url: "action_offers.php",
+            type: "GET",
+            data: {
+                offset: offset_status,
+                limit: limit,
+                zapros: zapros,
+                status_order: status_order,
+                is_status_sorting: 1,
+            },
+            cache: false,
+            success: function (response) {
+                if (response == 0) { // Смотрим ответ от сервера и выполняем соответствующее действие
+                    // alert("Больше нет записей");
+                    //$("#imgLoad").hide();
+                } else {
+                    $("#list").html("");
+                    $("#list").append(response);
+                }
+            }
+        });
+    });
+{% endif%}
+{% endblock %}
+
+{% block extra_scripts %}
+{{ block.super }}
+<script src="{% static 'js/helpers.js' %}"></script>
+{% endblock %}

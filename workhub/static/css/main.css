@@ -1,0 +1,36 @@
+.main-menu {
+    margin-top: auto; 
+    margin-bottom: auto;
+}
+
+.main-menu__wrapper a {
+    text-decoration: none;
+}
+
+.main-menu__image {
+    width: 100px;
+    height: 100px;
+}
+
+.thumbnail {
+    height: calc(30vh - 21px);
+    min-height: 225px;
+    overflow: hidden;
+}
+.thumbnail .caption {
+    padding: 0;
+}
+.thumbnail img {
+    height: 100px;
+}
+.caption h3 {
+    margin-top: 15px;
+    margin-bottom: 5px;
+}
+
+@media (max-width: 1100px) and (min-width: 992px) {
+    .thumbnail .caption {
+        padding: 0;
+        transform: scale(0.8) translateY(-10px);
+    }
+}

@@ -1,0 +1,26 @@
+
+{% if comments %}
+{% for comment in comments %}
+    <tr><td>{{ forloop.counter }}</td>
+        <td>{{ comment.date_comment|date:"d.m.Y H:i" }}</td>
+        <td><a href="{{ comment.company }}">{{ comment.company.name_company }}</a></td>
+        <td>
+            {% if comment.result == 1 %}
+            <b> {{ "<Р>" }}</b>
+            {% else %}
+            <b>{{ "<Н>" }}</b>
+            {% endif %}
+            
+            {% autoescape off %}
+                {{ comment.comment|linebreaks|truncatechars:500|urlize  }}
+            {% endautoescape %}
+        </td>
+    </tr>
+{% endfor %}
+{% else %}
+<tr>
+    <td colspan="4"><p class="text-center">Больше записей нет</h3></td>
+</tr>
+{% endif %}
+
+

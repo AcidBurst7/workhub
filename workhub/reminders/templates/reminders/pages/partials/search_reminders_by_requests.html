@@ -1,0 +1,29 @@
+
+{% if reminders_requests %}
+{% for reminder_request in reminders_requests %}
+    <tr><td>{{ forloop.counter }}</td>
+        <td>{{ reminder_request.due_date|date:"d.m.Y" }}</td>
+        <td><a href="{% url 'company:view' reminder_request.request.company.company %}">
+            {{ reminder_request.request.company.name_company }}
+        </a></td>
+        <td>
+            <a href="{% url 'requests:view_request' reminder_request.request_id %}">
+                {% autoescape off %}
+                    {{ reminder_request.request.title|linebreaks|truncatechars:500|urlize  }}
+                {% endautoescape %}
+            </a>
+        </td>
+        <td>
+            <a href="{% url 'requests:view_request' reminder_request.request_id %}">
+                <i class="bi bi-file-text"></i>
+            </a>
+        </td>
+    </tr>
+{% endfor %}
+{% else %}
+<tr>
+    <td colspan="4"><p class="text-center">Больше записей нет</h3></td>
+</tr>
+{% endif %}
+
+

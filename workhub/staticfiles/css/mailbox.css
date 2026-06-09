@@ -1,0 +1,25 @@
+.email { border-bottom: 1px solid #ddd; padding: 10px; }
+.attachments { color: blue; font-size: 0.9em; }
+#load-more { margin-top: 20px; padding: 10px 15px; background: #007bff; color: white; border: none; cursor: pointer; }
+#load-more:disabled { background: #ccc; cursor: not-allowed; }
+
+.flagged-th-line {
+    position: relative;
+}
+.glyphicon-rotate {
+    position: absolute;
+    color: red;
+    top: 30%;
+    left: 0;
+    rotate: 270deg;
+}
+.vertical-list li {
+    display: inline-block;
+    border: 1px solid grey;
+    border-radius: 15px;
+    margin-left: 10px;
+    margin-top: 10px;
+    padding: 5px 10px;
+    white-space: break-spaces;
+    vertical-align: top;
+}

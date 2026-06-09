@@ -1,0 +1,40 @@
+{% load user_groups %}
+{% if companies %}
+    {% for company in companies %}
+        <tr {% if company.is_primary %}style="background-color:#dff0d8"{% endif %}>
+            <td>{{ forloop.counter }}</td>
+            <td>
+                {% if request.user|has_group:"director" %}
+                    <label>
+                        <input type="checkbox" name="companies[]" value="{{ company.id_company }}">
+                        {{ company.id_company }}
+                    </label>
+                {% else %}
+                    {{ company.id_company }}
+                {% endif %}
+            </td>
+            <td><h5>{{ company.name_company }}</h5></td>
+            <td>
+                {% if company.projects %}
+                    <ul style="list-style: none; padding-left:0">
+                    {% for company_project in company.projects %}
+                        <li>{{ company_project }}</li>
+                    {% endfor %}
+                    </ul>
+                {% endif %}
+            </td>
+            <td>{{ company.status_name }}</td>
+            <td>{{ company.manager_name }}</td>
+            <td>
+                <a target="_blank" href="{% url 'company:view' company.id_company %}">
+                    <span class='glyphicon glyphicon-search' style='font-size: 20px;' 
+                    data-toggle='Подробнее' data-placement='right' title='Подробнее'></span>
+                </a>
+                <a target="_blank" href="{% url 'company:update' company.id_company %}">
+                    <span class='glyphicon glyphicon-pencil' style='font-size: 20px;' 
+                    data-toggle='Изменить' data-placement='right' title='Изменить'></span>
+                </a>
+            </td>
+        </tr>
+    {% endfor %}
+{% endif %}
